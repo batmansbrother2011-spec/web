@@ -247,4 +247,37 @@ export default function PrivacyPolicyPage() {
           </p>
         </section>
 
- 
+        <Separator />
+
+        <section>
+          <h3 className="text-xl font-semibold tracking-tight">
+            Changes to this policy
+          </h3>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            The proxy operator may update this privacy policy from time
+            to time. The &quot;Last updated&quot; date at the top of
+            this page indicates when the policy was last revised. We
+            encourage you to review this page periodically to stay
+            informed about how your data is being handled.
+          </p>
+        </section>
+
+        <Separator />
+
+        <section>
+          <h3 className="text-xl font-semibold tracking-tight">Contact</h3>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            If you have questions about this privacy policy or want to
+            exercise your data rights, contact the proxy operator. If
+            you&apos;re using a publicly-hosted deployment and
+            don&apos;t know who the operator is, your best option is to
+            deploy your own copy (download the source from the home
+            page) so you have full control over your data.
+          </p>
+        </section>
+      </main>
+
+      <SiteFooter />
+    </div>
+  );
+}
