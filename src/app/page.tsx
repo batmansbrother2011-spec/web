@@ -7,6 +7,7 @@ import {
   Cookie,
   Download,
   ExternalLink,
+  Gamepad2,
   Globe,
   History,
   Loader2,
@@ -204,6 +205,13 @@ export default function Home() {
                 {cookieHosts.length === 1 ? "" : "s"} logged in
               </Badge>
             )}
+            <a
+              href="/play"
+              className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted/40 transition-colors"
+            >
+              <Gamepad2 className="h-3.5 w-3.5" />
+              Play Games
+            </a>
             <ThemeToggle />
             <a
               href="/web-proxy.zip"
