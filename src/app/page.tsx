@@ -24,6 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/sonner";
 import { AdUnit } from "@/components/ad-unit";
+import { SiteFooter } from "@/components/site-footer";
 
 interface HistoryItem {
   url: string;
@@ -343,6 +344,19 @@ export default function Home() {
                     </Button>
                   </div>
                 </div>
+                {/* Streaming / WebRTC warning banner — only shown for sites
+                    known to use game streaming or video calls. */}
+                {isStreamingSite(activeTarget) && (
+                  <div className="mt-3 rounded-md border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-700 dark:text-blue-400">
+                    <strong>WebRTC / streaming site:</strong>{" "}
+                    The proxy injects a TURN relay server into the proxied
+                    page&apos;s WebRTC config so the stream flows through a
+                    relay instead of dying on direct UDP. The default relay
+                    is Open Relay (openrelay.metered.ca, 500 MB/month free)
+                    — set <code className="rounded bg-muted px-1 py-0.5 text-xs">TURN_URLS</code> + <code className="rounded bg-muted px-1 py-0.5 text-xs">TURN_USERNAME</code> + <code className="rounded bg-muted px-1 py-0.5 text-xs">TURN_CREDENTIAL</code> env vars to swap in your own
+                    coturn server for unlimited traffic.
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="p-0">
                 <div className="relative h-[68vh] min-h-[420px] w-full overflow-hidden rounded-b-lg border-t bg-muted/30">
@@ -545,28 +559,34 @@ export default function Home() {
         </section>
       </main>
 
+      {/* Big download section near the bottom of the page */}
+      <section className="mx-auto max-w-6xl w-full px-4 sm:px-6 pb-8">
+        <Card className="border-border/60 bg-primary/5">
+          <CardContent className="py-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Download className="h-6 w-6" />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h2 className="text-base font-semibold">
+                Download the source code
+              </h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Grab the full project as a zip — deploy to Vercel or Cloudflare
+                Workers (instructions in README.md).
+              </p>
+            </div>
+            <Button asChild size="lg" className="gap-2">
+              <a href="/web-proxy.zip" download="web-proxy.zip">
+                <Download className="h-4 w-4" />
+                Download .zip (~236 KB)
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+
       {/* Footer */}
-      <footer className="border-t mt-auto">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
-          <span>Built with Next.js 16 · deploy to Vercel · MIT</span>
-<a
-  href="/about"
-  className="hover:text-foreground underline-offset-2 hover:underline"
->
-  About
-</a>
-<span className="ml-auto">
-  <a
-    className="hover:text-foreground underline-offset-2 hover:underline"
-    href="https://vercel.com/docs/functions/serverless-functions"
-    target="_blank"
-    rel="noreferrer"
-  >
-    Vercel serverless docs →
-  </a>
-</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
@@ -577,4 +597,40 @@ function formatRelative(ts: number): string {
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
   return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
+/**
+ * Returns true for sites known to use WebRTC for game streaming or
+ * real-time video. We surface a warning banner for these so users know
+ * the actual stream won't work through an HTTP proxy.
+ */
+function isStreamingSite(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return [
+      "xbox.com",
+      "www.xbox.com",
+      "geforcenow.com",
+      "play.geforcenow.com",
+      "stadia.google.com",
+      "stadia.com",
+      "playstation.com",
+      "remoteplay.dl.playstation.net",
+      "luna.amazon.com",
+      "rainway.com",
+      "parsecgaming.com",
+      "stadiagamedev.com",
+      "cloudcast.gg",
+      "gamepass.com",
+      "discord.com",
+      "meet.google.com",
+      "zoom.us",
+      "teams.microsoft.com",
+      "web.skype.com",
+      "twitch.tv",
+      "youtube.com",
+    ].some((h) => host === h || host.endsWith("." + h));
+  } catch {
+    return false;
+  }
 }
