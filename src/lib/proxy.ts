@@ -11,6 +11,83 @@
  * (that would be both slow and unsafe inside a serverless function).
  */
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TURN server configuration
+//
+// WebRTC requires direct UDP connectivity between the browser and the
+// streaming server. HTTP proxies cannot carry UDP — but we CAN inject a
+// TURN relay server into the proxied page's RTCPeerConnection config so
+// the browser's video packets flow through TURN (over TCP/UDP) instead of
+// trying direct connection.
+//
+// Default: Open Relay (openrelay.metered.ca) — a free public TURN service
+// with 500 MB/month of free traffic. Good enough for testing, not enough
+// for serious gaming (1 minute of Xbox Cloud Gaming ≈ 75-150 MB).
+//
+// To override, set env vars on your deployment:
+//   TURN_URLS=turn:your-server.com:3478,turn:your-server.com:5349
+//   TURN_USERNAME=your-username
+//   TURN_CREDENTIAL=your-credential
+//
+// Free TURN options:
+//   1. Open Relay (default, no signup)
+//   2. Cloudflare Calls (50 GB/month free, requires API signup)
+//   3. Self-hosted coturn on Oracle Cloud Always Free VPS (unlimited)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TurnServer {
+  urls: string;
+  username?: string;
+  credential?: string;
+}
+
+/**
+ * Returns the TURN servers to inject into proxied RTCPeerConnections.
+ *
+ * Reads from env vars TURN_URLS / TURN_USERNAME / TURN_CREDENTIAL.
+ * Falls back to Open Relay's free public TURN service.
+ */
+export function getTurnServers(): TurnServer[] {
+  const envUrls = process.env.TURN_URLS;
+  const envUser = process.env.TURN_USERNAME;
+  const envCred = process.env.TURN_CREDENTIAL;
+
+  if (envUrls) {
+    // Custom TURN config (e.g. your own coturn server, or Cloudflare Calls)
+    const urls = envUrls.split(",").map((s) => s.trim()).filter(Boolean);
+    return urls.map((url) => ({
+      urls: url,
+      ...(envUser ? { username: envUser } : {}),
+      ...(envCred ? { credential: envCred } : {}),
+    }));
+  }
+
+  // Default: Open Relay (free, no signup required).
+  // https://openrelay.metered.ca/
+  return [
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turns:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    // STUN for NAT discovery (helps the browser find its public IP so
+    // ICE can fall back to direct connection when TURN isn't needed).
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+  ];
+}
+
+
 /** Build a proxied URL that points back at /api/proxy?url=<target>. */
 export function buildProxyUrl(target: string, base = "/api/proxy"): string {
   // We pass the original URL through verbatim (not encoded twice) so the
@@ -46,8 +123,18 @@ export function resolveUrl(raw: string, base: string): string | null {
  *
  * @param html       Raw HTML from upstream.
  * @param baseUrl    The final URL of the upstream response (after redirects).
+ * @param turnServers  TURN servers to inject into RTCPeerConnection. If
+ *                     omitted, no TURN injection happens (WebRTC will fail
+ *                     fast as before). If provided, the proxied page's
+ *                     RTCPeerConnection config gets these TURN servers
+ *                     PREPENDED to iceServers so WebRTC traffic flows
+ *                     through the relay instead of dying.
  */
-export function rewriteHtml(html: string, baseUrl: string): string {
+export function rewriteHtml(
+  html: string,
+  baseUrl: string,
+  turnServers?: TurnServer[],
+): string {
   // Attribute name → attribute selector. We rewrite these.
   const attrRewrites: Array<{ attr: string; tag: string | null }> = [
     { attr: "href", tag: null }, // a, link, area, base...
@@ -339,6 +426,180 @@ export function rewriteHtml(html: string, baseUrl: string): string {
       }, true);
     } catch(e){}
 
+    // ── WebSocket interception ─────────────────────────────────────────────
+    // Proxied pages create WebSocket connections like:
+    //   new WebSocket('wss://signalr.xbox.com/...')
+    // Under our proxy this would try to connect to wss://OUR-DOMAIN/...
+    // which doesn't exist. We rewrite the URL so the WS connection goes
+    // through /api/proxy?url=wss://... — which the server side will
+    // upgrade and pipe through.
+    try {
+      var OrigWS = window.WebSocket;
+      if (OrigWS) {
+        var PatchedWS = function(url, protocols) {
+          try {
+            var resolved = new URL(String(url), TARGET).toString();
+            // Convert ws:// and wss:// to http:// and https:// — the proxy
+            // endpoint accepts HTTP requests with ?url=wss://... and upgrades
+            // them server-side.
+            var httpUrl = resolved.replace(/^ws:/i, 'http:').replace(/^wss:/i, 'https:');
+            var proxied = wrap(httpUrl);
+            return new OrigWS(proxied, protocols);
+          } catch(e) {
+            return new OrigWS(url, protocols);
+          }
+        };
+        PatchedWS.prototype = OrigWS.prototype;
+        PatchedWS.CONNECTING = OrigWS.CONNECTING;
+        PatchedWS.OPEN = OrigWS.OPEN;
+        PatchedWS.CLOSING = OrigWS.CLOSING;
+        PatchedWS.CLOSED = OrigWS.CLOSED;
+        window.WebSocket = PatchedWS;
+      }
+    } catch(e){}
+
+    // ── EventSource (Server-Sent Events) interception ────────────────────
+    try {
+      var OrigES = window.EventSource;
+      if (OrigES) {
+        var PatchedES = function(url, config) {
+          try {
+            var resolved = new URL(String(url), TARGET).toString();
+            var proxied = wrap(resolved);
+            return new OrigES(proxied, config);
+          } catch(e) {
+            return new OrigES(url, config);
+          }
+        };
+        PatchedES.prototype = OrigES.prototype;
+        window.EventSource = PatchedES;
+      }
+    } catch(e){}
+
+    // ── Service Worker registration interception ─────────────────────────
+    // Some sites (Xbox, Spotify) register service workers that handle
+    // fetch events independently of the page. Under our proxy the SW would
+    // register on OUR origin and try to intercept the wrong requests.
+    // We intercept navigator.serviceWorker.register so the SW is fetched
+    // through the proxy (URL rewritten) — though cross-origin SW
+    // registration is blocked by browsers, so this may still fail.
+    try {
+      var origSWRegister = navigator.serviceWorker && navigator.serviceWorker.register;
+      if (origSWRegister) {
+        navigator.serviceWorker.register = function(scriptUrl, options) {
+          try {
+            var resolved = new URL(String(scriptUrl), TARGET).toString();
+            var proxied = wrap(resolved);
+            return origSWRegister.call(navigator.serviceWorker, proxied, options);
+          } catch(e) {
+            return origSWRegister.call(navigator.serviceWorker, scriptUrl, options);
+          }
+        };
+      }
+    } catch(e){}
+
+    // ── RTCPeerConnection (WebRTC) interception ──────────────────────────
+    // Game streaming sites (Xbox Cloud Gaming, GeForce NOW, Stadia) use
+    // WebRTC for the actual video/audio stream. WebRTC requires direct
+    // UDP connectivity between the browser and the streaming server.
+    //
+    // We inject a TURN relay server into RTCPeerConnection's iceServers
+    // config so the browser's video packets flow through TURN instead of
+    // trying (and failing) direct connection. TURN works over TCP and
+    // UDP, so it can carry WebRTC traffic where HTTP proxies cannot.
+    try {
+      var OrigRTC = window.RTCPeerConnection || window.webkitRTCPeerConnection;
+      if (OrigRTC) {
+        // Inject the configured TURN servers (passed from server side).
+        var TURN_SERVERS = ${JSON.stringify(turnServers || [])};
+
+        var PatchedRTC = function(config, constraints) {
+          var userConfig = config || {};
+          var userIceServers = userConfig.iceServers || [];
+
+          // PREPEND our TURN servers — ICE tries them first, then falls
+          // back to whatever the page originally specified. This means
+          // even if the page sets its own STUN/TURN servers, ours get
+          // tried first (so traffic goes through our relay).
+          var mergedIceServers = TURN_SERVERS.concat(userIceServers);
+
+          var newConfig = Object.assign({}, userConfig, {
+            iceServers: mergedIceServers,
+            // Keep 'all' so the browser tries both relay and direct paths.
+            // Use 'relay' to force all traffic through TURN (more privacy,
+            // more latency, may break some sites).
+            iceTransportPolicy: 'all'
+          });
+
+          var pc = new OrigRTC(newConfig, constraints);
+
+          // Listen for failure and emit a custom event the page / our UI
+          // can react to.
+          pc.addEventListener('iceconnectionstatechange', function() {
+            var state = pc.iceConnectionState;
+            if (state === 'failed') {
+              try {
+                window.dispatchEvent(new CustomEvent('proxy:webrtc-failed', {
+                  detail: {
+                    message: TURN_SERVERS.length > 0
+                      ? 'WebRTC connection failed even with TURN relay. The TURN server may be down, rate-limited, or blocked by the streaming service.'
+                      : 'WebRTC cannot be proxied. Set TURN_URLS env var to enable TURN relay.'
+                  }
+                }));
+              } catch(e){}
+            } else if (state === 'connected') {
+              try {
+                window.dispatchEvent(new CustomEvent('proxy:webrtc-connected', {
+                  detail: { message: 'WebRTC connection established through TURN relay.' }
+                }));
+              } catch(e){}
+            }
+          });
+          return pc;
+        };
+        PatchedRTC.prototype = OrigRTC.prototype;
+        if (OrigRTC.generateCertificate) {
+          PatchedRTC.generateCertificate = OrigRTC.generateCertificate.bind(OrigRTC);
+        }
+        window.RTCPeerConnection = PatchedRTC;
+        if (window.webkitRTCPeerConnection) {
+          window.webkitRTCPeerConnection = PatchedRTC;
+        }
+      }
+    } catch(e){}
+
+    // ── History API (pushState / replaceState) interception ──────────────
+    // Single-page-apps update the URL via history.pushState. Under our
+    // proxy this would change the URL bar (which we don't really care
+    // about since we're in an iframe), but more importantly the new URL
+    // is OUR origin + relative path. We rewrite so pushState URLs include
+    // the upstream URL — this keeps the SPA's routing logic consistent.
+    try {
+      var origPushState = history.pushState;
+      var origReplaceState = history.replaceState;
+      history.pushState = function(state, title, url) {
+        if (url) {
+          try {
+            var resolved = new URL(String(url), TARGET).toString();
+            // Don't actually rewrite the URL bar — just no-op the URL
+            // change but keep the state object. The SPA's internal
+            // router will think navigation succeeded.
+            return origPushState.call(history, state, title, undefined);
+          } catch(e){}
+        }
+        return origPushState.call(history, state, title, url);
+      };
+      history.replaceState = function(state, title, url) {
+        if (url) {
+          try {
+            var resolved = new URL(String(url), TARGET).toString();
+            return origReplaceState.call(history, state, title, undefined);
+          } catch(e){}
+        }
+        return origReplaceState.call(history, state, title, url);
+      };
+    } catch(e){}
+
   } catch(e){}
 })();</script>`;
 
@@ -401,6 +662,59 @@ export const PASSTHROUGH_RESPONSE_HEADERS = new Set([
   "expires",
   "vary",
 ]);
+
+/**
+ * Response headers we ALWAYS strip from upstream responses so the proxied
+ * page can actually render inside our iframe.
+ *
+ * - `X-Frame-Options` (DENY / SAMEORIGIN) — prevents the page from being
+ *   embedded in an iframe. Sites like Xbox, Google, Twitter set this.
+ * - `Content-Security-Policy: frame-ancestors` — same effect as
+ *   X-Frame-Options, the modern replacement. We strip the frame-ancestors
+ *   directive while leaving the rest of the CSP intact for security.
+ * - `Content-Security-Policy-Report-Only` — same.
+ * - `Cross-Origin-Opener-Policy` / `Cross-Origin-Embedder-Policy` / `Cross-Origin-Resource-Policy`
+ *   — these break fetches and postMessage between our proxy origin and the
+ *   proxied page. Strip them so the page works.
+ *
+ * Note: We strip these ONLY on responses going through /api/proxy, so the
+ * rest of our app (the home page UI) keeps its normal headers.
+ */
+export const STRIP_RESPONSE_HEADERS = new Set([
+  "x-frame-options",
+  "content-security-policy-report-only",
+  "cross-origin-opener-policy",
+  "cross-origin-embedder-policy",
+  "cross-origin-resource-policy",
+  "cross-origin-opener-policy-report-only",
+  "cross-origin-embedder-policy-report-only",
+]);
+
+/**
+ * Strip frame-ancestors from a Content-Security-Policy header value, leaving
+ * the rest of the policy intact. Returns null if the policy becomes empty
+ * (caller should then drop the header entirely).
+ */
+export function stripFrameAncestorsFromCSP(csp: string): string | null {
+  if (!csp) return null;
+  const directives = csp
+    .split(";")
+    .map((d) => d.trim())
+    .filter((d) => {
+      const lower = d.toLowerCase();
+      // Remove frame-ancestors, frame-src, child-src that would block
+      // embedding. Keep all other directives (script-src, style-src, etc.)
+      // so the page's security is otherwise preserved.
+      return (
+        !lower.startsWith("frame-ancestors") &&
+        !lower.startsWith("child-src")
+      );
+    });
+  // Also strip 'frame-src' if it contains 'none' or specifically blocks
+  // our origin — but that's rare, so we leave it alone.
+  const result = directives.join("; ").trim();
+  return result || null;
+}
 
 /** Headers we strip from the outgoing fetch to the target (to avoid leaking). */
 export const STRIP_REQUEST_HEADERS = new Set([
