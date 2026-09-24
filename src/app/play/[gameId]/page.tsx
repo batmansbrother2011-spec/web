@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Gamepad2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import type { Metadata } from "next";
 
 // Render dynamically so any game ID works without needing to pre-render
 // every route at build time. This fixes 404s when adding new games.
@@ -80,8 +81,14 @@ const GAMES: Record<string, GameConfig> = {
   },
 };
 
-export function generateMetadata({ params }: { params: { gameId: string } }) {
-  const game = GAMES[params.gameId];
+// Next.js 16 changed dynamic route params to be Promises — must await them.
+interface PageProps {
+  params: Promise<{ gameId: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { gameId } = await params;
+  const game = GAMES[gameId];
   if (!game) return { title: "Game not found" };
   return {
     title: `${game.title} — Play Games`,
@@ -89,8 +96,9 @@ export function generateMetadata({ params }: { params: { gameId: string } }) {
   };
 }
 
-export default function GamePage({ params }: { params: { gameId: string } }) {
-  const game = GAMES[params.gameId];
+export default async function GamePage({ params }: PageProps) {
+  const { gameId } = await params;
+  const game = GAMES[gameId];
   if (!game) notFound();
 
   // If the game blocks iframe embedding, route through our /api/proxy
