@@ -10,10 +10,23 @@ export function generateStaticParams() {
   return [
     { gameId: "retro-bowl" },
     { gameId: "2048" },
+    { gameId: "polytrack" },
   ];
 }
 
-const GAMES: Record<string, { title: string; url: string; description: string }> = {
+interface GameConfig {
+  title: string;
+  url: string;
+  description: string;
+  /**
+   * If true, route the iframe through our /api/proxy endpoint so we can
+   * strip X-Frame-Options and CSP frame-ancestors headers. Required for
+   * sites that explicitly block embedding (like Kodub's Polytrack).
+   */
+  useProxy?: boolean;
+}
+
+const GAMES: Record<string, GameConfig> = {
   "retro-bowl": {
     title: "Retro Bowl",
     url: "https://poki.com/en/g/retro-bowl",
@@ -25,6 +38,16 @@ const GAMES: Record<string, { title: string; url: string; description: string }>
     url: "https://play2048.co",
     description:
       "The classic sliding tile puzzle. Combine matching numbers to reach 2048.",
+  },
+  polytrack: {
+    title: "Polytrack",
+    // Kodub's static hosting serves v0.6.2 — the latest stable release.
+    url: "https://app-polytrack.kodub.com/0.6.2/",
+    description:
+      "A low-poly racing game with loops, jumps, and high speeds. Race against the clock on customizable tracks. Version 0.6.2 — the latest stable release from Kodub.",
+    // Kodub's CSP blocks iframe embedding from non-kodub domains. Route
+    // through our /api/proxy so we strip the CSP header and can embed it.
+    useProxy: true,
   },
 };
 
@@ -40,6 +63,12 @@ export function generateMetadata({ params }: { params: { gameId: string } }) {
 export default function GamePage({ params }: { params: { gameId: string } }) {
   const game = GAMES[params.gameId];
   if (!game) notFound();
+
+  // If the game blocks iframe embedding, route through our /api/proxy
+  // endpoint which strips X-Frame-Options and CSP frame-ancestors headers.
+  const iframeSrc = game.useProxy
+    ? `/api/proxy?url=${encodeURIComponent(game.url)}`
+    : game.url;
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -58,6 +87,11 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
             <Gamepad2 className="h-3.5 w-3.5" />
             {game.title}
           </h1>
+          {game.useProxy && (
+            <span className="text-[10px] text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded">
+              proxied
+            </span>
+          )}
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
             <Button asChild size="sm" variant="ghost" className="h-7 gap-1.5 text-xs">
@@ -77,7 +111,7 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
       {/* Game iframe — fills the rest of the screen */}
       <div className="flex-1 relative">
         <iframe
-          src={game.url}
+          src={iframeSrc}
           className="absolute inset-0 w-full h-full border-0"
           title={game.title}
           allow="autoplay; fullscreen; gamepad; accelerometer; gyroscope; microphone"
