@@ -3,44 +3,43 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata = {
-  title: "Privacy Policy — Vercel Web Proxy",
+  title: "Terms of Service — Vercel Web Proxy",
   description:
-    "Privacy policy for the Vercel Web Proxy. What data is collected, how it's stored, who can see it, and how to delete it.",
+    "Terms of service for the Vercel Web Proxy. Acceptable use, prohibited uses, liability, and dispute resolution.",
   keywords: [
-    "privacy policy",
-    "web proxy privacy",
-    "cookie policy",
-    "data collection",
+    "terms of service",
+    "web proxy terms",
+    "acceptable use",
+    "user agreement",
   ],
 };
 
-export default function PrivacyPolicyPage() {
+export default function TermsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SiteHeader />
 
       <main className="flex-1 mx-auto max-w-3xl w-full px-4 sm:px-6 py-10 flex flex-col gap-8">
         <section>
-          <h2 className="text-3xl font-bold tracking-tight">Privacy Policy</h2>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Terms of Service
+          </h2>
           <p className="mt-3 text-sm text-muted-foreground">
             Last updated: {new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
           </p>
         </section>
 
         <section>
-          <h3 className="text-xl font-semibold tracking-tight">Overview</h3>
+          <h3 className="text-xl font-semibold tracking-tight">
+            1. Acceptance of terms
+          </h3>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            This privacy policy describes how the Vercel Web Proxy (the
-            &quot;Service&quot;) handles data when you use it. The Service
-            is an HTTP proxy that fetches web pages on your behalf and
-            forwards them to your browser. Because of how proxies work,
-            some data must be processed to deliver the service — this
-            policy explains what data, why, and how long it&apos;s kept.
-          </p>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            By using the Service, you consent to the data practices
-            described in this policy. If you do not agree with this
-            policy, do not use the Service.
+            By accessing or using the Vercel Web Proxy (the
+            &quot;Service&quot;), you agree to be bound by these Terms
+            of Service (&quot;Terms&quot;). If you do not agree to
+            these Terms, you may not access or use the Service. These
+            Terms form a legally binding agreement between you and the
+            operator of the Service (the &quot;Operator&quot;).
           </p>
         </section>
 
@@ -48,186 +47,67 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h3 className="text-xl font-semibold tracking-tight">
-            What data we collect
+            2. Description of service
           </h3>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            The Service processes the following categories of data when
-            you use it:
+            The Service is an HTTP proxy that fetches web pages on
+            your behalf and forwards them to your browser. The Service
+            rewrites HTML, CSS, and JavaScript to route subsequent
+            requests (images, scripts, stylesheets, etc.) through the
+            proxy. The Service is provided &quot;as is&quot; without
+            warranty of any kind, express or implied.
           </p>
-          <ul className="mt-3 space-y-3 text-base text-muted-foreground">
-            <li>
-              <strong>URLs you request.</strong> When you enter a URL into
-              the proxy, that URL is sent to the proxy server, which
-              fetches it on your behalf. The URL is processed in memory
-              to fulfill your request and is not persisted by the proxy
-              code itself. However, the hosting platform (Vercel or
-              Cloudflare) may log the URL as part of standard access logs.
-            </li>
-            <li>
-              <strong>Upstream cookies.</strong> When the upstream site
-              you&apos;re proxying sets cookies (e.g. session cookies),
-              those cookies are stored in a single HttpOnly cookie on
-              the proxy&apos;s domain. This cookie is scoped to the
-              <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">/api/proxy</code>
-              path, so it only travels with requests to the proxy endpoint.
-              The cookie is stored in your browser, not on the server.
-            </li>
-            <li>
-              <strong>Standard request metadata.</strong> Like any web
-              service, the proxy receives your IP address, browser
-              User-Agent, and the referring URL with each request. This
-              metadata is processed to fulfill your request and is not
-              persisted by the proxy code itself, but may be logged by
-              the hosting platform.
-            </li>
-            <li>
-              <strong>Browsing history (local only).</strong> The Service
-              stores a list of the URLs you&apos;ve recently proxied in
-              your browser&apos;s localStorage. This data never leaves
-              your device and is not transmitted to the server.
-            </li>
-          </ul>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h3 className="text-xl font-semibold tracking-tight">
-            How data is stored
-          </h3>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            The Service uses two storage layers:
+            The Service is designed for personal browsing, geo-bypass
+            testing, content research, and security reviews. The
+            Operator reserves the right to modify, suspend, or
+            discontinue the Service at any time without notice.
           </p>
-          <ul className="mt-3 space-y-3 text-base text-muted-foreground">
-            <li>
-              <strong>Browser storage (cookies and localStorage).</strong>
-              The cookie jar (upstream cookies) and browsing history are
-              stored in your browser. They are scoped to the proxy&apos;s
-              domain and only travel with requests to the proxy endpoint.
-              They are not accessible to upstream sites you visit through
-              the proxy.
-            </li>
-            <li>
-              <strong>Server-side processing.</strong> The proxy fetches
-              upstream URLs in memory, processes the response (rewriting
-              HTML/CSS, capturing Set-Cookie headers), and returns the
-              result. No upstream content is persisted server-side
-              between requests. The proxy code does not write any data
-              to disk or to a database.
-            </li>
-          </ul>
         </section>
 
         <Separator />
 
         <section>
           <h3 className="text-xl font-semibold tracking-tight">
-            Who can see your data
+            3. Acceptable use
           </h3>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            Several parties may have access to data processed by the
-            Service:
-          </p>
-          <ul className="mt-3 space-y-3 text-base text-muted-foreground">
-            <li>
-              <strong>The proxy operator.</strong> Whoever hosts this
-              proxy deployment (you, if you self-host) can see the URLs
-              you request, your real IP address, and the volume of
-              traffic. If you&apos;re using a public deployment hosted by
-              someone else, assume they can see this data.
-            </li>
-            <li>
-              <strong>The hosting platform.</strong> Vercel or Cloudflare
-              (depending on where the proxy is deployed) may keep access
-              logs for their own operational purposes (abuse prevention,
-              DDoS mitigation, billing). These logs typically include
-              the URL requested, the timestamp, the response status, and
-              the requester&apos;s IP address.
-            </li>
-            <li>
-              <strong>Upstream sites.</strong> When the proxy fetches a
-              URL on your behalf, the upstream site sees the proxy
-              server&apos;s IP address and the proxy&apos;s User-Agent,
-              not your real IP. However, upstream sites may still set
-              cookies, use browser fingerprinting, or detect proxy
-              traffic through other means. The proxy strips
-              X-Forwarded-* headers to reduce leakage, but cannot
-              fully anonymize you against a determined upstream.
-            </li>
-            <li>
-              <strong>Google AdSense (if ads are enabled).</strong> If
-              the deployment has AdSense configured (via the
-              <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">NEXT_PUBLIC_ADSENSE_CLIENT</code>
-              env var), Google&apos;s ad serving scripts run on the
-              proxy&apos;s home page and may collect standard analytics
-              data (browser type, screen resolution, approximate
-              location based on IP). This data is governed by{" "}
-              <a
-                href="https://policies.google.com/technologies/ads"
-                target="_blank"
-                rel="noreferrer"
-                className="text-primary hover:underline"
-              >
-                Google&apos;s Ads Privacy Policy
-              </a>
-              .
-            </li>
-          </ul>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h3 className="text-xl font-semibold tracking-tight">
-            How long data is kept
-          </h3>
-          <ul className="mt-3 space-y-3 text-base text-muted-foreground">
-            <li>
-              <strong>Browser cookie jar:</strong> Cookies set by
-              upstream sites are kept for 1 year (or until you clear them).
-              You can clear them at any time using the &quot;Clear&quot;
-              button in the &quot;Logged-in sites&quot; panel on the home
-              page, or by clearing your browser&apos;s cookies for the
-              proxy domain.
-            </li>
-            <li>
-              <strong>Browsing history (localStorage):</strong> The last
-              12 proxied URLs are kept until you clear them via the
-              &quot;Clear&quot; button in the History panel, or until you
-              clear your browser&apos;s site data.
-            </li>
-            <li>
-              <strong>Server-side data:</strong> No data is persisted
-              server-side by the proxy code. Hosting platform access logs
-              (Vercel/Cloudflare) may be retained according to the
-              platform&apos;s own data retention policies, typically 30-90
-              days.
-            </li>
-          </ul>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h3 className="text-xl font-semibold tracking-tight">
-            Your rights
-          </h3>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            Depending on your jurisdiction (GDPR for EU residents, CCPA
-            for California residents, etc.), you may have the right to:
+            You agree to use the Service only for lawful purposes and
+            in a manner that does not infringe the rights of, restrict,
+            or inhibit anyone else&apos;s use and enjoyment of the
+            Service. By way of example, and not as a limitation, you
+            agree not to:
           </p>
           <ul className="mt-3 space-y-2 text-base text-muted-foreground">
-            <li>• Access the personal data we hold about you</li>
-            <li>• Request deletion of your personal data</li>
-            <li>• Object to processing of your personal data</li>
-            <li>• Request export of your personal data in a portable format</li>
+            <li>• Use the Service to violate any law, regulation, or third-party right</li>
+            <li>• Use the Service to upload, post, or otherwise transmit any content that is illegal, harmful, threatening, abusive, harassing, defamatory, or otherwise objectionable</li>
+            <li>• Use the Service to infringe upon any patent, trademark, trade secret, copyright, or other intellectual property right of any party</li>
+            <li>• Use the Service to send unsolicited communications, advertising, or promotional material (&quot;spam&quot;)</li>
+            <li>• Use the Service to access, probe, or scan the network infrastructure of any third party without authorization</li>
+            <li>• Use the Service to interfere with, disrupt, or negatively affect any other user&apos;s ability to use the Service</li>
+            <li>• Use the Service for high-volume automated scraping, crawling, or data extraction</li>
+            <li>• Use the Service to bypass security controls, rate limits, or authentication mechanisms of any third-party service</li>
+            <li>• Resell, sublicense, or otherwise commercialize access to the Service without the Operator&apos;s written consent</li>
           </ul>
+        </section>
+
+        <Separator />
+
+        <section>
+          <h3 className="text-xl font-semibold tracking-tight">
+            4. Privacy and data
+          </h3>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            Because all browser-side data is stored locally and can be
-            cleared by you at any time, exercising these rights is as
-            simple as clearing your browser&apos;s cookies and site data
-            for the proxy domain. For server-side data (access logs held
-            by the hosting platform), contact the proxy operator directly.
+            Your use of the Service is also governed by our{" "}
+            <a
+              href="/privacy-policy"
+              className="text-primary hover:underline"
+            >
+              Privacy Policy
+            </a>
+            , which describes how we collect, use, and disclose
+            information about you. By using the Service, you consent
+            to the data practices described in the Privacy Policy.
           </p>
         </section>
 
@@ -235,15 +115,15 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h3 className="text-xl font-semibold tracking-tight">
-            Children&apos;s privacy
+            5. Intellectual property
           </h3>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            The Service is not intended for use by children under the age
-            of 13 (or the minimum age in your jurisdiction). The Service
-            does not knowingly collect personal information from children.
-            If you believe a child has provided personal information
-            through the Service, please contact the proxy operator so it
-            can be deleted.
+            The Service&apos;s source code is open source under the
+            MIT license. You may use, modify, and distribute the source
+            code in accordance with the terms of the MIT license. The
+            Service does not claim ownership of any content transmitted
+            through it — all such content remains the property of its
+            respective owners.
           </p>
         </section>
 
@@ -251,28 +131,119 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h3 className="text-xl font-semibold tracking-tight">
-            Changes to this policy
+            6. Disclaimer of warranties
           </h3>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            The proxy operator may update this privacy policy from time
-            to time. The &quot;Last updated&quot; date at the top of
-            this page indicates when the policy was last revised. We
-            encourage you to review this page periodically to stay
-            informed about how your data is being handled.
+            THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS
+            AVAILABLE,&quot; WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+            IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES
+            OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+            NON-INFRINGEMENT. THE OPERATOR DOES NOT WARRANT THAT THE
+            SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE, OR
+            THAT ANY DEFECTS WILL BE CORRECTED.
+          </p>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            You use the Service at your own risk. The Service is not
+            intended for use in circumstances where its failure could
+            lead to death, personal injury, or severe environmental
+            or property damage.
           </p>
         </section>
 
         <Separator />
 
         <section>
-          <h3 className="text-xl font-semibold tracking-tight">Contact</h3>
+          <h3 className="text-xl font-semibold tracking-tight">
+            7. Limitation of liability
+          </h3>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            If you have questions about this privacy policy or want to
-            exercise your data rights, contact the proxy operator. If
-            you&apos;re using a publicly-hosted deployment and
-            don&apos;t know who the operator is, your best option is to
-            deploy your own copy (download the source from the home
-            page) so you have full control over your data.
+            TO THE FULLEST EXTENT PERMITTED BY LAW, IN NO EVENT WILL THE
+            OPERATOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+            CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS
+            OR REVENUE, ARISING OUT OF OR RELATED TO YOUR USE OF THE
+            SERVICE, WHETHER BASED ON WARRANTY, CONTRACT, TORT
+            (INCLUDING NEGLIGENCE), OR ANY OTHER LEGAL THEORY, WHETHER
+            OR NOT THE OPERATOR HAS BEEN INFORMED OF THE POSSIBILITY
+            OF SUCH DAMAGE.
+          </p>
+        </section>
+
+        <Separator />
+
+        <section>
+          <h3 className="text-xl font-semibold tracking-tight">
+            8. Indemnification
+          </h3>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            You agree to indemnify, defend, and hold harmless the
+            Operator and its affiliates from and against any claims,
+            liabilities, damages, losses, and expenses (including
+            reasonable attorneys&apos; fees) arising out of or in any
+            way connected with your access to or use of the Service,
+            or your violation of these Terms.
+          </p>
+        </section>
+
+        <Separator />
+
+        <section>
+          <h3 className="text-xl font-semibold tracking-tight">
+            9. Termination
+          </h3>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            The Operator may terminate or suspend your access to the
+            Service at any time, without prior notice or liability,
+            for any reason, including if you breach these Terms. Upon
+            termination, your right to use the Service will immediately
+            cease. Any data stored in your browser via the Service
+            (cookie jar, browsing history) will persist until you
+            clear your browser&apos;s site data for the proxy domain.
+          </p>
+        </section>
+
+        <Separator />
+
+        <section>
+          <h3 className="text-xl font-semibold tracking-tight">
+            10. Governing law
+          </h3>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            These Terms shall be governed by and construed in
+            accordance with the laws of the jurisdiction in which the
+            Operator resides, without regard to its conflict of law
+            provisions. Any disputes arising under these Terms shall
+            be resolved in the courts of that jurisdiction.
+          </p>
+        </section>
+
+        <Separator />
+
+        <section>
+          <h3 className="text-xl font-semibold tracking-tight">
+            11. Changes to these terms
+          </h3>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            The Operator reserves the right to modify these Terms at
+            any time. The &quot;Last updated&quot; date at the top of
+            this page indicates when the Terms were last revised.
+            Your continued use of the Service after any changes
+            constitutes acceptance of the new Terms. If you do not
+            agree to the new Terms, you must stop using the Service.
+          </p>
+        </section>
+
+        <Separator />
+
+        <section>
+          <h3 className="text-xl font-semibold tracking-tight">
+            12. Contact
+          </h3>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            If you have any questions about these Terms, please
+            contact the Operator. If you&apos;re using a publicly-hosted
+            deployment and don&apos;t know who the Operator is, your
+            best option is to deploy your own copy (download the source
+            from the home page).
           </p>
         </section>
       </main>

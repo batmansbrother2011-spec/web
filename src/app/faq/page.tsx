@@ -1,250 +1,124 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Globe, ShieldCheck, Cookie, Code } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata = {
-  title: "About — Vercel Web Proxy",
+  title: "FAQ — Vercel Web Proxy",
   description:
-    "Learn how this self-hostable web proxy works, what it's good for, what its limitations are, and how to deploy your own copy on Vercel or Cloudflare Workers in under five minutes.",
+    "Frequently asked questions about the Vercel Web Proxy: how it works, what it can and can't do, security, cookies, deployment, and troubleshooting.",
   keywords: [
-    "web proxy",
-    "vercel proxy",
-    "cloudflare workers proxy",
-    "self-hosted proxy",
-    "next.js proxy",
-    "http proxy",
-    "serverless proxy",
-    "anonymous browsing",
+    "web proxy faq",
+    "vercel proxy questions",
+    "how does web proxy work",
+    "proxy limitations",
+    "xbox cloud gaming proxy",
   ],
 };
 
-export default function AboutPage() {
+interface QA {
+  q: string;
+  a: string;
+}
+
+const FAQS: QA[] = [
+  {
+    q: "What is a web proxy?",
+    a: "A web proxy is a server that fetches web pages on your behalf and forwards them to your browser. When you use a proxy, the websites you visit see the proxy's IP address, not your real one. This can be useful for privacy, bypassing geo-restrictions, or accessing content that's blocked in your region. Our proxy specifically rewrites the HTML, CSS, and JavaScript of the pages it fetches so that all subsequent requests (for images, scripts, stylesheets, etc.) also flow through the proxy — meaning your real IP is never exposed to the target site, even on subsequent clicks.",
+  },
+  {
+    q: "How is this different from a VPN?",
+    a: "A VPN routes ALL your network traffic (TCP, UDP, WebRTC, DNS) through a remote server. This proxy only routes HTTP and HTTPS traffic — it cannot carry UDP traffic, which means it can't proxy WebRTC video calls, online games, or game streaming services like Xbox Cloud Gaming. VPNs also typically install a system-level network adapter, while a web proxy only affects traffic going through your browser to the proxy's URL. VPNs are more comprehensive; proxies are simpler and more targeted.",
+  },
+  {
+    q: "Is this proxy anonymous?",
+    a: "Partially. The websites you visit through the proxy see the proxy server's IP address, not your real IP. However, the proxy operator (whoever hosts the proxy on Vercel or Cloudflare) can see which sites you're visiting and how much traffic you're generating. If you're using a publicly-hosted proxy, the operator can theoretically log your activity. For full anonymity, host your own copy on your own Vercel/Cloudflare account — the project is open source and the download link is on the home page.",
+  },
+  {
+    q: "Does the proxy log my activity?",
+    a: "The proxy code itself does not log the URLs you visit or the content of the pages you fetch. However, the hosting platform (Vercel or Cloudflare) may keep access logs for their own operational purposes (DDoS protection, abuse prevention, billing). These logs typically include the URL requested, the timestamp, the response status, and your real IP address. If you need stronger privacy, deploy your own copy on a VPS you control, where you can configure logging to your own preferences.",
+  },
+  {
+    q: "Can I sign into websites through the proxy?",
+    a: "Yes — the proxy maintains a per-host cookie jar that stores session cookies set by upstream sites. When you sign in to a site through the proxy, the session cookie is captured and replayed on subsequent requests, so you stay logged in as you navigate. However, some sites (Google, banking sites, some e-commerce checkouts) detect proxy environments and refuse to load. If a login flow redirects you to an error page, that's likely the cause.",
+  },
+  {
+    q: "Can I use this to play Xbox Cloud Gaming?",
+    a: "No. Xbox Cloud Gaming uses WebRTC over UDP for the actual game stream, and HTTP proxies cannot carry UDP traffic. The launcher page (where you click Play) will load through the proxy, but the game stream itself won't work. To play Xbox Cloud Gaming from a different region, you need a real VPN that supports UDP — Mullvad, ProtonVPN, or your own WireGuard server are all good options.",
+  },
+  {
+    q: "Why does TikTok show a CAPTCHA?",
+    a: "TikTok has aggressive anti-bot detection that recognizes proxy traffic and challenges it with a CAPTCHA. There's no way to bypass this from an HTTP proxy — TikTok's bot detection looks at request patterns, TLS fingerprints, and behavioral signals that are hard to spoof. If you need to access TikTok through a proxy, the only reliable solution is a residential proxy network (which routes traffic through real home ISPs), and even those get detected eventually.",
+  },
+  {
+    q: "Can I host my own copy?",
+    a: "Yes — the full source code is in the project ZIP, downloadable from the home page. Unzip it, push to a new GitHub repo, and import at vercel.com/new or use the Cloudflare Workers instructions in the README. The whole process takes about five minutes from download to live URL. The free tier of either Vercel or Cloudflare is enough for personal use.",
+  },
+  {
+    q: "Is this free?",
+    a: "The proxy code is open source under the MIT license — free to use, modify, and distribute. Hosting on Vercel or Cloudflare's free tier is also free for personal use (with limits — typically 100,000 requests per day on Cloudflare, or 100 GB-hours of serverless execution per month on Vercel Hobby). If you exceed those limits, you'd need to upgrade to a paid plan. Self-hosting on a VPS (Oracle Cloud Always Free, Hetzner, etc.) is unlimited but requires more setup.",
+  },
+  {
+    q: "Can I add Google AdSense to my proxy?",
+    a: "Yes — the project includes built-in AdSense support. Set the NEXT_PUBLIC_ADSENSE_CLIENT environment variable on your Vercel/Cloudflare deployment to your publisher ID (looks like ca-pub-1234567890123456), redeploy, and ads will appear in the two sidebar slots. You'll need to be approved by AdSense first — they review your site for content quality, navigation, and policy compliance. The /about, /faq, /privacy-policy, and /terms pages on this site exist primarily to satisfy AdSense's content quality requirements.",
+  },
+  {
+    q: "How do I clear my cookie jar?",
+    a: "On the home page, look for the 'Logged-in sites' panel in the bottom section. If any sites have set cookies, a 'Clear' button will appear next to the panel title. Click it to wipe all stored cookies. You can also clear cookies by clearing your browser's cookies for the proxy's domain (the cookie is named 'proxy_cookies' and is scoped to the /api/proxy path).",
+  },
+  {
+    q: "Why does the proxy sometimes hang or show a blank page?",
+    a: "The most common causes are: (1) the target site is slow to respond and the proxy is waiting (serverless functions have a timeout — 10 seconds on Vercel Hobby, 60 seconds on Pro); (2) the target site has detected the proxy and is refusing to serve content; (3) the target site is using WebSockets or WebRTC that the proxy can't carry; (4) the target site sets X-Frame-Options or CSP frame-ancestors that the proxy strips but the browser still enforces in some edge cases. Try clicking 'Open' to launch the proxied page in a new browser tab, which bypasses the iframe entirely.",
+  },
+  {
+    q: "Can I use this proxy for automated scraping?",
+    a: "Technically yes, but please don't. The proxy is designed for interactive browser use, not high-volume automated requests. If you scrape through a public proxy, you'll quickly exhaust the free tier limits and the operator will be billed. If you need to scrape at scale, use a dedicated scraping service (Bright Data, ScraperAPI, etc.) that's designed for that purpose and has the appropriate infrastructure and IP rotation.",
+  },
+  {
+    q: "What happens if someone abuses my public proxy deployment?",
+    a: "If you deploy this proxy publicly (anyone with the URL can use it), people may use it to launder automated requests, bypass rate limits, or access content that violates your hosting provider's terms. Vercel and Cloudflare both have abuse policies — if they receive complaints about traffic from your deployment, they may suspend your account. To prevent abuse, consider: (1) keeping the URL private, (2) adding authentication (the project supports NextAuth.js but it's not configured by default), (3) adding rate-limiting (not included by default), or (4) deploying to a VPS where you have more control.",
+  },
+  {
+    q: "How do I report a bug or request a feature?",
+    a: "The project is open source — fork it on GitHub, make your changes, and submit a pull request. If you found a security issue, please don't open a public GitHub issue; instead, contact the project maintainer directly. Keep in mind that this is a personal project with no SLA — bugs may or may not get fixed depending on the maintainer's availability.",
+  },
+];
+
+export default function FAQPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-4 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Globe className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold leading-tight">
-              Vercel Web Proxy
-            </h1>
-            <p className="text-xs text-muted-foreground leading-tight">
-              Self-hosted, serverless, deploy in one click
-            </p>
-          </div>
-          <a
-            href="/"
-            className="ml-auto text-sm text-primary hover:underline"
-          >
-            ← Back to proxy
-          </a>
+    <div className="min-h-screen flex flex-col bg-background">
+      <SiteHeader />
+
+      <main className="flex-1 mx-auto max-w-3xl w-full px-4 sm:px-6 py-10 flex flex-col gap-6">
+        <section>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Frequently asked questions
+          </h2>
+          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
+            Common questions about how the Vercel Web Proxy works, what it
+            can and can&apos;t do, security and privacy considerations, and
+            how to deploy your own copy. If your question isn&apos;t
+            answered here, the <a href="/about" className="text-primary hover:underline">About page</a> has more
+            detailed technical information.
+          </p>
+        </section>
+
+        <Separator />
+
+        <div className="flex flex-col gap-6">
+          {FAQS.map((faq, i) => (
+            <section key={i} className="flex flex-col gap-2">
+              <h3 className="text-lg font-semibold tracking-tight">
+                {faq.q}
+              </h3>
+              <p className="text-base text-muted-foreground leading-relaxed">
+                {faq.a}
+              </p>
+            </section>
+          ))}
         </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl w-full px-4 sm:px-6 py-10 flex flex-col gap-8">
-        <section>
-          <h2 className="text-3xl font-bold tracking-tight">About this proxy</h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            Vercel Web Proxy is an open-source, self-hostable HTTP proxy built
-            on Next.js 16 and deployed to Vercel or Cloudflare Workers. It
-            fetches a target URL server-side, rewrites every link, script,
-            stylesheet, and image so the request stays inside the proxy, and
-            renders the result in a sandboxed iframe. A per-host cookie jar
-            stores upstream session cookies so you can sign into sites and
-            stay logged in across navigations. The proxy is designed for
-            personal browsing, geo-bypass testing, content research, and
-            security reviews — not for circumventing institutional
-            acceptable-use policies.
-          </p>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            How it works
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            When you enter a URL into the proxy, the request is sent to the
-            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">/api/proxy</code>
-            serverless route. That route fetches the upstream URL using a
-            generic browser User-Agent, strips identifying request headers
-            (your real IP, <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">X-Forwarded-*</code>,
-            Vercel-internal headers, your cookies), and returns the response.
-            For HTML and CSS responses, the proxy rewrites every
-            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">href</code>,
-            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">src</code>,
-            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">srcset</code>,
-            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">action</code>,
-            and <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">url()</code>
-            reference so they route back through the proxy. A small inline
-            JavaScript shim patches <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">fetch</code>,
-            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">XMLHttpRequest</code>,
-            <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">WebSocket</code>,
-            and <code className="mx-1 rounded bg-muted px-1 py-0.5 text-sm">EventSource</code>
-            so JavaScript-initiated requests also flow through the proxy.
-          </p>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <ShieldCheck className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">Header stripping</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                The proxy removes upstream <code className="rounded bg-muted px-1 py-0.5 text-xs">X-Frame-Options</code> and <code className="rounded bg-muted px-1 py-0.5 text-xs">Content-Security-Policy: frame-ancestors</code> headers so proxied pages can render inside the iframe. <code className="rounded bg-muted px-1 py-0.5 text-xs">Cross-Origin-Opener-Policy</code> and <code className="rounded bg-muted px-1 py-0.5 text-xs">Cross-Origin-Embedder-Policy</code> are also stripped so the proxied page can fetch its subresources normally.
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Cookie className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">Cookie jar</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                Because serverless functions are stateless, upstream cookies are bundled into a single <code className="rounded bg-muted px-1 py-0.5 text-xs">HttpOnly</code> cookie on our domain. The proxy reads this jar on every request, replays the relevant cookies to the upstream server, and writes any <code className="rounded bg-muted px-1 py-0.5 text-xs">Set-Cookie</code> response back into the jar.
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Code className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">Open source</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                The full source code is in the project ZIP, downloadable from the home page. Read it before deploying — you should understand what a proxy does to your traffic before you trust it with your browsing.
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <Globe className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">Edge runtime</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                The proxy route runs on Node.js but uses only Web-standard APIs (<code className="rounded bg-muted px-1 py-0.5 text-xs">fetch</code>, <code className="rounded bg-muted px-1 py-0.5 text-xs">Headers</code>, <code className="rounded bg-muted px-1 py-0.5 text-xs">URL</code>, <code className="rounded bg-muted px-1 py-0.5 text-xs">Response</code>) so the same code deploys to Vercel, Cloudflare Workers, Deno Deploy, or any other Web-standards host.
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            What it&apos;s good for
-          </h2>
-          <ul className="mt-3 space-y-2 text-base text-muted-foreground">
-            <li>• Browsing the web from a different IP address without installing a VPN</li>
-            <li>• Testing how a website renders in different regions or with different cookies</li>
-            <li>• Signing into a site you don&apos;t trust with your real session, using a throwaway browser profile</li>
-            <li>• Researching content that&apos;s geo-restricted in your country</li>
-            <li>• Reviewing the markup, scripts, and network requests of a site without exposing your real IP</li>
-            <li>• Learning how HTTP proxies, cookie jars, and URL rewriting work — the source code is fully commented</li>
-          </ul>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            What it does NOT do
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            The proxy only handles HTTP and HTTPS traffic. It cannot carry
-            UDP traffic, which means it cannot proxy WebRTC video streams,
-            online games, or any protocol that rides on UDP. Specifically:
-          </p>
-          <ul className="mt-3 space-y-2 text-base text-muted-foreground">
-            <li>• <strong>Xbox Cloud Gaming, GeForce NOW, PlayStation Remote Play, Amazon Luna</strong> — the launcher pages load, but the actual game stream uses WebRTC over UDP and cannot be proxied at the HTTP layer. Use a real VPN for these.</li>
-            <li>• <strong>TikTok</strong> — TikTok&apos;s anti-bot system detects proxy traffic and shows a CAPTCHA. There is no way around this from an HTTP proxy.</li>
-            <li>• <strong>Google login, banking sites, some e-commerce checkouts</strong> — these sites use client-side checks that detect proxy environments (unusual <code className="rounded bg-muted px-1 py-0.5 text-xs">window.location</code>, mismatched TLS fingerprints, etc.) and refuse to load.</li>
-            <li>• <strong>Anything requiring WebSockets over a non-HTTP port</strong> — the proxy can carry WebSocket traffic but only on standard HTTPS ports.</li>
-          </ul>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Security &amp; privacy notes
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            The proxy is sandboxed to prevent proxied pages from accessing
-            your real browser session, but sandboxing is not a hard security
-            boundary. Hostile pages can still execute JavaScript, attempt
-            clickjacking, fingerprint your browser, and try to escape the
-            iframe. Do not log into sensitive accounts (your bank, your
-            primary email, your work account) through this proxy. Use a
-            separate, throwaway browser profile, ideally deployed to a
-            separate Vercel project you control.
-          </p>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            The proxy does not anonymize you against the operator of the
-            proxy. If you host it on Vercel, Vercel sees the upstream IPs
-            you&apos;re requesting and the volume of traffic. If you host it
-            on Cloudflare Workers, Cloudflare sees the same. The cookie jar
-            is stored in your browser, not on the server, so it&apos;s
-            scoped to your device.
-          </p>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            POST, PUT, and other body-bearing requests are forwarded with
-            the original body intact. Don&apos;t deploy this proxy publicly
-            without rate-limiting or authentication, or people will use it
-            to launder automated requests through your Vercel account.
-          </p>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h2 className="text-2xl font-semibold tracking-tight">
-            Deploy your own copy
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            The full project ZIP is downloadable from the home page — look
-            for the &quot;Download .zip&quot; button in the header. Unzip
-            it, push it to a new GitHub repo, then import that repo at{" "}
-            <a
-              href="https://vercel.com/new"
-              className="text-primary hover:underline"
-              target="_blank"
-              rel="noreferrer"
-            >
-              vercel.com/new
-            </a>{" "}
-            or follow the Cloudflare Workers instructions in the README.
-            The whole process takes about five minutes from download to
-            live URL, and the free tier of either platform is enough for
-            personal use.
-          </p>
-        </section>
-
-        <Separator />
-
-        <section>
-          <h2 className="text-2xl font-semibold tracking-tight">License</h2>
-          <p className="mt-3 text-base text-muted-foreground leading-relaxed">
-            MIT. Use it, fork it, sell it, learn from it. No warranty, no
-            liability. If you deploy it publicly and people abuse it,
-            that&apos;s on you.
-          </p>
-        </section>
       </main>
 
-      <footer className="border-t mt-10">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-4 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
-          <span>Built with Next.js 16 · MIT license</span>
-          <a
-            href="/"
-            className="ml-auto hover:text-foreground hover:underline underline-offset-2"
-          >
-            ← Back to proxy
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

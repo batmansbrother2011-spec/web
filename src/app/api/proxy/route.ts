@@ -6,17 +6,23 @@ import {
   cookiesForHost,
   decodeTarget,
   getJarFromRequest,
+  getTurnServers,
   rewriteCss,
   rewriteHtml,
   serializeJar,
   PASSTHROUGH_RESPONSE_HEADERS,
   STRIP_REQUEST_HEADERS,
+  stripFrameAncestorsFromCSP,
 } from "@/lib/proxy";
 
+// Use Node.js runtime (works on Vercel + Cloudflare Workers via OpenNext's
+// cloudflare-node wrapper). The Next.js App Router + OpenNext adapter has
+// issues with edge runtime API routes in Next 16.x — using nodejs runtime
+// works around that. All APIs used (fetch, Headers, URL, Response) are
+// Web standards and work fine on both platforms.
 export const runtime = "nodejs";
-// Vercel hobby functions cap at 10s; bump up to 60s where available.
-export const maxDuration = 60;
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 /** Default User-Agent. Some sites 403 the default `node` UA. */
 const UA =
@@ -144,8 +150,7 @@ async function handle(req: NextRequest): Promise<Response> {
         headers,
         body: isRedirectBody ? reqBody : undefined,
         redirect: "manual",
-        // @ts-expect-error -- `cache` is a valid fetch init field
-        cache: "no-store" as RequestCache,
+        cache: "no-store",
       });
 
       // Capture Set-Cookie from this hop (if any) into the jar.
@@ -202,10 +207,28 @@ async function handle(req: NextRequest): Promise<Response> {
   const contentType = upstream.headers.get("content-type") || "";
   const ct = contentType.toLowerCase();
   const respHeaders = new Headers();
+
+  // Pass through whitelisted headers (content-type, cache-control, etc.).
   PASSTHROUGH_RESPONSE_HEADERS.forEach((h) => {
     const v = upstream.headers.get(h);
     if (v) respHeaders.set(h, v);
   });
+
+  // Special handling for Content-Security-Policy: we don't pass it
+  // through unchanged (it would block embedding via frame-ancestors).
+  // Instead, strip the frame-ancestors / child-src directives and pass
+  // the cleaned policy through so the page keeps its other protections.
+  const csp = upstream.headers.get("content-security-policy");
+  if (csp) {
+    const cleaned = stripFrameAncestorsFromCSP(csp);
+    if (cleaned) {
+      respHeaders.set("content-security-policy", cleaned);
+    }
+  }
+
+  // Note: STRIP_RESPONSE_HEADERS (X-Frame-Options, COOP, COEP, CORP, etc.)
+  // are not in PASSTHROUGH_RESPONSE_HEADERS, so they're already excluded
+  // from respHeaders — no explicit deletion needed.
 
   // Always advertise that this is a proxied response. Use finalUrl so the
   // x-proxy-target reflects any redirects that were followed.
@@ -239,7 +262,11 @@ async function handle(req: NextRequest): Promise<Response> {
   // HTML: rewrite links / scripts / styles / images to go through the proxy.
   if (ct.includes("text/html") || ct.includes("application/xhtml+xml")) {
     const text = await upstream.text();
-    const rewritten = rewriteHtml(text, finalUrl);
+    // Pass TURN servers into the proxied page so RTCPeerConnection uses
+    // a relay instead of failing. Reads from TURN_URLS / TURN_USERNAME /
+    // TURN_CREDENTIAL env vars, defaults to Open Relay free public TURN.
+    const turnServers = getTurnServers();
+    const rewritten = rewriteHtml(text, finalUrl, turnServers);
     return new Response(rewritten, {
       status: upstream.status,
       statusText: upstream.statusText,

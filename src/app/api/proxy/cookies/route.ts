@@ -5,8 +5,10 @@ import {
   jarHosts,
 } from "@/lib/proxy";
 
+// Use Node.js runtime (works on Vercel + Cloudflare Workers via OpenNext).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 /**
  * GET /api/proxy/cookies

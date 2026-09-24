@@ -8,12 +8,14 @@
 #   - package.json, bun.lock, tsconfig.json, next.config.ts
 #   - eslint.config.mjs, postcss.config.mjs, tailwind.config.ts
 #   - components.json
-#   - vercel.json
+#   - vercel.json          (for Vercel deploy)
+#   - wrangler.jsonc       (for Cloudflare Workers deploy)
+#   - open-next.config.ts  (Cloudflare OpenNext adapter config)
 #   - README.md
 #
 # Excludes (per .gitignore + obvious build/runtime junk):
 #   - node_modules/
-#   - .next/
+#   - .next/, .open-next/
 #   - .git/
 #   - .zscripts/
 #   - dev.log, server.log
@@ -52,7 +54,10 @@ INCLUDES=(
   "tailwind.config.ts"
   "components.json"
   "vercel.json"
+  "wrangler.jsonc"
+  "open-next.config.ts"
   "README.md"
+  "scripts"
 )
 
 # Use --no-recursion to skip subdirs we didn't list. We add dirs explicitly.

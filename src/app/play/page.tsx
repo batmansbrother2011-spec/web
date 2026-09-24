@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Gamepad2, ExternalLink, Play } from "lucide-react";
+import { ArrowLeft, Gamepad2, ExternalLink, Play, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,128 +9,133 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export const metadata = {
   title: "Play Games — Vercel Web Proxy",
   description:
-    "Free browser games — Retro Bowl, Polytrack, Eaglercraft, and more. No download required.",
+    "Free browser games hosted directly on this site — 2048, Hextris, Snake. No external dependencies, no embed blocking, no ads.",
   keywords: [
     "free browser games",
-    "play retro bowl online",
-    "play polytrack online",
-    "eaglercraft",
-    "minecraft in browser",
-    "no download games",
+    "play 2048 online",
+    "play hextris",
+    "play snake",
+    "self-hosted games",
   ],
 };
 
-type GameType = "embed" | "link";
+type GameType = "self-hosted" | "embed" | "link";
 
 interface Game {
   id: string;
   title: string;
   description: string;
+  /** For self-hosted games, the local path (e.g. /games/2048/). For embed/link games, the external URL. */
   url: string;
   type: GameType;
-  category: "sports" | "racing" | "sandbox" | "puzzle" | "multiplayer" | "runner";
+  category: "puzzle" | "arcade" | "sports" | "sandbox" | "multiplayer";
   badge?: string;
+  /** Optional emoji or icon to show in the card. */
+  emoji?: string;
 }
 
 const GAMES: Game[] = [
-  // Sports
+  // ─── Self-hosted games (legal, always work, no embed blocking) ────────
+  {
+    id: "2048",
+    title: "2048",
+    description:
+      "The classic sliding tile puzzle. Combine matching numbers to reach 2048. Easy to learn, hard to master. Originally by Gabriele Cirulli (MIT licensed).",
+    url: "/games/2048/",
+    type: "self-hosted",
+    category: "puzzle",
+    badge: "Self-hosted",
+    emoji: "🔢",
+  },
+  {
+    id: "hextris",
+    title: "Hextris",
+    description:
+      "A fast-paced Tetris-inspired puzzle game on a hexagonal grid. Rotate, drop, and clear lines in six directions. Addicting and beautiful. (GPL licensed)",
+    url: "/games/hextris/",
+    type: "self-hosted",
+    category: "puzzle",
+    badge: "Self-hosted",
+    emoji: "⬡",
+  },
+  {
+    id: "snake",
+    title: "Snake",
+    description:
+      "The classic Nokia game, reborn. Eat the food, grow your snake, don't hit the walls or yourself. Speeds up as you score. Works on desktop and mobile (swipe to play).",
+    url: "/games/snake/",
+    type: "self-hosted",
+    category: "arcade",
+    badge: "Self-hosted",
+    emoji: "🐍",
+  },
+
+  // ─── External embeds (may break due to bot detection — use at own risk) ──
   {
     id: "retro-bowl",
     title: "Retro Bowl",
     description:
-      "The classic American football game. Build your dynasty, draft players, manage morale, and chase the championship. Plays in browser, no download.",
+      "The classic American football game (embedded from Poki). ⚠️ May not load if Poki blocks the embed — if it shows a blank screen, click 'Open original' instead.",
     url: "https://poki.com/en/g/retro-bowl",
     type: "embed",
     category: "sports",
-    badge: "Most popular",
+    badge: "Embed (Poki)",
+    emoji: "🏈",
   },
-  // Racing
+
+  // ─── External links (open in new tab — always work) ──────────────────
+  {
+    id: "eaglercraft",
+    title: "Eaglercraft",
+    description:
+      "Minecraft in your browser. Single-player and multiplayer support. Hosted on a separate site (click to open in a new tab).",
+    url: "https://your-eaglercraft-site.vercel.app",
+    type: "link",
+    category: "sandbox",
+    badge: "External link",
+    emoji: "⛏️",
+  },
   {
     id: "polytrack",
     title: "Polytrack",
     description:
-      "A low-poly racing game with loops, jumps, and high speeds. Race against the clock on customizable tracks. Every millisecond counts. Version 0.6.2 — the latest stable release from Kodub.",
-    // Kodub's CSP blocks iframe embedding, but we route through our own
-    // /api/proxy which strips the CSP header, so we can embed it.
-    url: "https://app-polytrack.kodub.com/0.6.2/",
-    type: "embed",
-    category: "racing",
-    badge: "v0.6.2",
+      "A low-poly racing game with loops, jumps, and high speeds. Hosted on Kodub's site — we can't embed it reliably due to their bot protection, so this opens in a new tab.",
+    url: "https://www.kodub.com/polytrack",
+    type: "link",
+    category: "arcade",
+    badge: "External link",
+    emoji: "🏎️",
   },
-  // Runner
-  {
-    id: "run-3",
-    title: "Run 3",
-    description:
-      "The classic endless runner. Jump, dodge, and gravity-flip your way through tunnels in space. Simple controls, addicting gameplay — a Flash-game-era classic reborn.",
-    url: "https://games.crazygames.com/en_US/run-3/index.html",
-    type: "embed",
-    category: "runner",
-  },
-  // Multiplayer
   {
     id: "krunker",
     title: "Krunker.io",
     description:
-      "Fast-paced multiplayer first-person shooter. Blocky graphics, smooth gameplay, instant matchmaking. The most popular browser FPS — thousands of players online.",
+      "Fast-paced multiplayer first-person shooter. Blocky graphics, smooth gameplay, instant matchmaking. The most popular browser FPS.",
     url: "https://krunker.io",
-    type: "embed",
-    category: "multiplayer",
-    badge: "Multiplayer",
-  },
-  {
-    id: "1v1-lol",
-    title: "1v1.LOL",
-    description:
-      "Build, shoot, and outplay opponents in 1v1, 2v2, and battle royale modes. Fortnite-style building mechanics in your browser. Real-time multiplayer.",
-    // 1v1.lol uses Cloudflare bot protection that blocks our proxy.
-    // Link out instead — opens in a new tab on their site.
-    url: "https://1v1.lol",
     type: "link",
     category: "multiplayer",
-    badge: "Multiplayer",
+    badge: "External link",
+    emoji: "🔫",
   },
   {
     id: "shellshockers",
     title: "Shell Shockers",
     description:
-      "Multiplayer egg-based shooter. Crack opponents, collect weapons, dominate the arena. The most ridiculous multiplayer FPS — surprisingly competitive.",
+      "Multiplayer egg-based shooter. Crack opponents, collect weapons, dominate the arena. Surprisingly competitive and tons of fun.",
     url: "https://shellshock.io",
-    type: "embed",
-    category: "multiplayer",
-    badge: "Multiplayer",
-  },
-  // Sandbox
-  {
-    id: "eaglercraft",
-    title: "Eaglercraft",
-    description:
-      "Minecraft in your browser. Single-player and multiplayer support, runs on any device with a modern browser. No download required.",
-    // Update this URL to your actual Eaglercraft deployment.
-    url: "https://your-eaglercraft-site.vercel.app",
     type: "link",
-    category: "sandbox",
-    badge: "Self-hosted",
-  },
-  // Puzzle
-  {
-    id: "2048",
-    title: "2048",
-    description:
-      "The classic sliding tile puzzle. Combine matching numbers to reach 2048. Easy to learn, hard to master.",
-    url: "https://play2048.co",
-    type: "embed",
-    category: "puzzle",
+    category: "multiplayer",
+    badge: "External link",
+    emoji: "🥚",
   },
 ];
 
 const CATEGORY_LABELS: Record<Game["category"], string> = {
-  sports: "Sports",
-  racing: "Racing",
-  sandbox: "Sandbox",
   puzzle: "Puzzle",
+  arcade: "Arcade",
+  sports: "Sports",
+  sandbox: "Sandbox",
   multiplayer: "Multiplayer",
-  runner: "Runner",
 };
 
 export default function PlayPage() {
@@ -145,7 +150,7 @@ export default function PlayPage() {
           <div>
             <h1 className="text-base font-semibold leading-tight">Play Games</h1>
             <p className="text-xs text-muted-foreground leading-tight">
-              Free browser games — no download required
+              Self-hosted games — no embed blocking, no ads, no tracking
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -167,12 +172,15 @@ export default function PlayPage() {
         <section>
           <h2 className="text-3xl font-bold tracking-tight">Play games</h2>
           <p className="mt-2 text-base text-muted-foreground leading-relaxed">
-            Free browser games you can play right now. No downloads, no
-            installs, no accounts. Click a game to start playing.
+            Games marked <Badge variant="secondary" className="mx-1 text-[10px]">Self-hosted</Badge>
+            are hosted directly on this site — they always work, load instantly,
+            and have no ads. Games marked <Badge variant="outline" className="mx-1 text-[10px]">External link</Badge>
+            open on the developer&apos;s own website in a new tab (we can&apos;t
+            embed them reliably because their bot protection blocks proxies).
           </p>
         </section>
 
-        {(["multiplayer", "sports", "racing", "runner", "sandbox", "puzzle"] as Game["category"][]).map((category) => {
+        {(["puzzle", "arcade", "sports", "sandbox", "multiplayer"] as Game["category"][]).map((category) => {
           const games = GAMES.filter((g) => g.category === category);
           if (games.length === 0) return null;
           return (
@@ -188,11 +196,17 @@ export default function PlayPage() {
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                          <Gamepad2 className="h-5 w-5" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-xl">
+                          {game.emoji || "🎮"}
                         </div>
                         {game.badge && (
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge
+                            variant={game.type === "self-hosted" ? "secondary" : "outline"}
+                            className="text-[10px] gap-1"
+                          >
+                            {game.type === "self-hosted" && (
+                              <ShieldCheck className="h-3 w-3" />
+                            )}
                             {game.badge}
                           </Badge>
                         )}
@@ -204,11 +218,11 @@ export default function PlayPage() {
                         {game.description}
                       </p>
                       <Button asChild size="sm" className="w-full gap-1.5">
-                        {game.type === "embed" ? (
-                          <Link href={`/play/${game.id}`}>
+                        {game.type === "self-hosted" ? (
+                          <a href={game.url}>
                             <Play className="h-3.5 w-3.5" />
                             Play now
-                          </Link>
+                          </a>
                         ) : (
                           <a
                             href={game.url}
@@ -229,15 +243,17 @@ export default function PlayPage() {
         })}
 
         <section className="rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">How this works:</strong>{" "}
-          Games marked &quot;Play now&quot; are embedded directly on this
-          site. Some game developers (like Kodub for Polytrack) block
-          iframe embedding via Content-Security-Policy headers — for those,
-          we route the iframe through this site&apos;s own proxy, which
-          strips the embedding restrictions. The game still loads from
-          the developer&apos;s servers — we don&apos;t host any
-          copyrighted game files ourselves. Games marked &quot;Open in
-          new tab&quot; open on the developer&apos;s own website.
+          <strong className="text-foreground flex items-center gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+            Why self-hosted games?
+          </strong>{" "}
+          Games marked &quot;Self-hosted&quot; are open-source projects (MIT,
+          GPL, or Apache licensed) whose source code we host directly on this
+          site. They always work — no iframe embedding issues, no bot
+          detection, no ads. We don&apos;t host any copyrighted commercial
+          game files (like Retro Bowl or Krunker&apos;s source) because that
+          would violate the developers&apos; licenses. Commercial games link
+          out to the developers&apos; own sites instead.
         </section>
       </main>
 
