@@ -305,12 +305,16 @@ export function rewriteHtml(
     // For example, Xbox's SPA at /en-US/play reads location.pathname, sees
     // "/api/proxy", and shows its 404 page ("Double check your map, Captain").
     //
-    // We override window.location's getters to return the UPSTREAM values
+    // We override Location.prototype getters to return the UPSTREAM values
     // for pathname, search, hash, href, origin, hostname, port, protocol.
     // The browser's address bar still shows the proxy URL — but the page's
     // JS sees the upstream URL it expects.
+    //
+    // Why prototype? Object.defineProperty on window.location itself often
+    // silently fails in modern browsers because Location is a "live" object.
+    // Overriding Location.prototype works because the JS engine looks up
+    // properties via the prototype chain.
     try {
-      var origLoc = window.location;
       var upstreamParts = {
         href: TARGET,
         origin: TARGET_URL.origin,
@@ -322,26 +326,47 @@ export function rewriteHtml(
         search: TARGET_URL.search,
         hash: TARGET_URL.hash
       };
-      function defineLocProp(name) {
+
+      // Try to override each property on Location.prototype.
+      // We need to keep the original setters so navigation still works
+      // (e.g. location.href = "/foo" should call the original setter
+      // which we redirect through the proxy).
+      ['href','origin','protocol','host','hostname','port','pathname','search','hash'].forEach(function(name) {
         try {
-          Object.defineProperty(origLoc, name, {
+          var protoDesc = Object.getOwnPropertyDescriptor(Location.prototype, name);
+          var origGet = protoDesc && protoDesc.get;
+          var origSet = protoDesc && protoDesc.set;
+          Object.defineProperty(Location.prototype, name, {
             configurable: true,
-            get: function(){ return upstreamParts[name]; },
+            enumerable: true,
+            get: function(){
+              // Return the upstream value (e.g. "/en-US/play") instead of
+              // the proxy URL's pathname ("/api/proxy").
+              return upstreamParts[name];
+            },
             set: function(v){
-              // Writes (like location.href = "/foo") should navigate
-              // through the proxy.
-              try { origLoc.assign.call(origLoc, wrap(v)); }
-              catch(e){}
+              if (name === 'href') {
+                // Setting location.href = "/foo" should navigate through the proxy
+                try { window.location.assign.call(window.location, wrap(v)); }
+                catch(e){}
+              } else if (origSet) {
+                // For other properties, fall back to the original setter
+                try { origSet.call(window.location, v); }
+                catch(e){}
+              }
             }
           });
         } catch(e){}
-      }
-      ['href','origin','protocol','host','hostname','port','pathname','search','hash'].forEach(defineLocProp);
-      // Override assign / replace too (they were already overridden above
-      // but we want to be sure they still wrap URLs through the proxy).
-      // toString() should also return the upstream URL.
-      origLoc.toString = function(){ return TARGET; };
+      });
+
+      // Also override Location.prototype.toString to return the upstream URL
+      try {
+        var origToString = Location.prototype.toString;
+        Location.prototype.toString = function(){ return TARGET; };
+      } catch(e){}
     } catch(e){}
+
+
 
     // ── Framebuster neutralizer ───────────────────────────────────────────
     // Sites that detect they're in an iframe often do:
