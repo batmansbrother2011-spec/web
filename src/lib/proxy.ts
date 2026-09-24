@@ -346,13 +346,30 @@ export function rewriteHtml(
             },
             set: function(v){
               if (name === 'href') {
-                // Setting location.href = "/foo" should navigate through the proxy
-                try { window.location.assign.call(window.location, wrap(v)); }
-                catch(e){}
+                // Setting location.href = "/foo" should navigate through the proxy.
+                // Call the ORIGINAL assign (stored in origAssign above) directly,
+                // NOT our overridden window.location.assign, to avoid double-wrapping.
+                try {
+                  if (typeof v === 'string' && v.indexOf('/api/proxy') === 0) {
+                    // Already a proxy URL — navigate directly
+                    origAssign(v);
+                  } else {
+                    origAssign(wrap(v));
+                  }
+                } catch(e){}
               } else if (origSet) {
-                // For other properties, fall back to the original setter
-                try { origSet.call(window.location, v); }
-                catch(e){}
+                // For other properties (pathname, search, etc.), fall back
+                // to the original setter. These typically trigger navigation
+                // to the same origin + new path, which we WANT to go through
+                // the proxy. The original setter uses the browser's actual
+                // location (proxy URL), so we need to wrap the result.
+                try {
+                  // Build the new upstream URL from the parts
+                  var newUrl = new URL(v, TARGET);
+                  origAssign(wrap(newUrl.toString()));
+                } catch(e){
+                  try { origSet.call(window.location, v); } catch(e2){}
+                }
               }
             }
           });
@@ -401,6 +418,13 @@ export function rewriteHtml(
       try {
         if (typeof input === 'string') input = wrap(input);
         else if (input && input.url) input = new Request(wrap(input.url), input);
+        // Don't let the browser auto-follow redirects — they'd go to the
+        // proxy domain's relative path, not the upstream's. Let our
+        // server-side proxy handle redirects (it already does, with
+        // manual redirect following to capture Set-Cookie headers).
+        // Actually, for fetch() the browser follows redirects on the
+        // proxy domain, which IS correct — the proxy URL is the
+        // browser's current origin. So we leave redirect as-is.
       } catch(e){}
       return origFetch.call(this, input, init);
     };
@@ -416,13 +440,35 @@ export function rewriteHtml(
     };
 
     // ── document.location patches ─────────────────────────────────────────
-    // Make setting document.location.href / window.location.href route
-    // through the proxy (best-effort; some sites use location.replace).
+    // Override location.assign / location.replace so JS-initiated navigations
+    // route through the proxy. We MUST be careful to only wrap ONCE — if the
+    // href setter (defined below) calls assign(), and assign() also wraps,
+    // we get a double-wrap that breaks navigation.
+    //
+    // Solution: assign/replace wrap the URL, then call the original.
+    // The href setter calls the ORIGINAL assign directly (not our override)
+    // so it can wrap without double-wrapping.
     try {
       var origAssign = window.location.assign && window.location.assign.bind(window.location);
       var origReplace = window.location.replace && window.location.replace.bind(window.location);
-      if (origAssign) window.location.assign = function(url){ return origAssign(wrap(url)); };
-      if (origReplace) window.location.replace = function(url){ return origReplace(wrap(url)); };
+      if (origAssign) {
+        window.location.assign = function(url){
+          // If URL is already a proxy URL, don't wrap again
+          if (typeof url === 'string' && url.indexOf('/api/proxy') === 0) {
+            return origAssign(url);
+          }
+          return origAssign(wrap(url));
+        };
+      }
+      if (origReplace) {
+        window.location.replace = function(url){
+          // If URL is already a proxy URL, don't wrap again
+          if (typeof url === 'string' && url.indexOf('/api/proxy') === 0) {
+            return origReplace(url);
+          }
+          return origReplace(wrap(url));
+        };
+      }
     } catch(e){}
 
     // ── Patch window.location.href setter ─────────────────────────────────
@@ -462,13 +508,23 @@ export function rewriteHtml(
     // builds a URL from the form's action + form data and navigates directly.
     // We intercept submit events and rewrite the action attribute on-the-fly
     // so the submission goes through /api/proxy?url=...
+    //
+    // IMPORTANT: If the action is ALREADY a proxy URL (because we rewrote it
+    // during HTML processing), don't wrap it again. Double-wrapping causes
+    // the form to submit to /api/proxy?url=%2Fapi%2Fproxy%3Furl%3D... which
+    // the server can't decode, and the page appears to "refresh" instead of
+    // navigating.
     try {
       document.addEventListener('submit', function(e) {
         try {
           var form = e.target;
           if (!form || form.tagName !== 'FORM') return;
-          var action = form.getAttribute('action') || form.action || '';
+          var action = form.getAttribute('action') || '';
           if (!action) return;
+          // If action is already a proxy URL, leave it alone
+          if (action.indexOf('/api/proxy') === 0) return;
+          // If action is already an absolute proxy URL, leave it alone
+          if (action.indexOf('http') === 0 && action.indexOf('/api/proxy') !== -1) return;
           // Resolve relative to target, then rewrite through proxy.
           var resolved = new URL(action, TARGET).toString();
           var wrapped = wrap(resolved);
