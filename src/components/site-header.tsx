@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Globe } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * Simple header for static content pages (about, faq, privacy, terms).
@@ -20,12 +21,15 @@ export function SiteHeader() {
             Self-hosted, serverless, deploy in one click
           </p>
         </div>
-        <Link
-          href="/"
-          className="ml-auto text-sm text-primary hover:underline"
-        >
-          ← Back to proxy
-        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/"
+            className="text-sm text-primary hover:underline"
+          >
+            ← Back to proxy
+          </Link>
+        </div>
       </div>
     </header>
   );
