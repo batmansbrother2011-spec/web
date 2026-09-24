@@ -39,6 +39,14 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
+                  href="/play"
+                  className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                >
+                  Play Games
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/about"
                   className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
                 >
