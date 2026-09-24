@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Globe, ShieldCheck, Cookie, Code } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata = {
   title: "About — Vercel Web Proxy",
@@ -20,30 +22,10 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-4 flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Globe className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold leading-tight">
-              Vercel Web Proxy
-            </h1>
-            <p className="text-xs text-muted-foreground leading-tight">
-              Self-hosted, serverless, deploy in one click
-            </p>
-          </div>
-          <a
-            href="/"
-            className="ml-auto text-sm text-primary hover:underline"
-          >
-            ← Back to proxy
-          </a>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-background">
+      <SiteHeader />
 
-      <main className="mx-auto max-w-3xl w-full px-4 sm:px-6 py-10 flex flex-col gap-8">
+      <main className="flex-1 mx-auto max-w-3xl w-full px-4 sm:px-6 py-10 flex flex-col gap-8">
         <section>
           <h2 className="text-3xl font-bold tracking-tight">About this proxy</h2>
           <p className="mt-3 text-base text-muted-foreground leading-relaxed">
@@ -234,17 +216,7 @@ export default function AboutPage() {
         </section>
       </main>
 
-      <footer className="border-t mt-10">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 py-4 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
-          <span>Built with Next.js 16 · MIT license</span>
-          <a
-            href="/"
-            className="ml-auto hover:text-foreground hover:underline underline-offset-2"
-          >
-            ← Back to proxy
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
