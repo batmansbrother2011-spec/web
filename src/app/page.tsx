@@ -26,6 +26,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AdUnit } from "@/components/ad-unit";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ProjectsSection } from "@/components/projects-section";
 
 interface HistoryItem {
   url: string;
@@ -301,6 +302,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* More projects */}
+        <ProjectsSection />
 
         {/* Result */}
         {activeTarget && (
