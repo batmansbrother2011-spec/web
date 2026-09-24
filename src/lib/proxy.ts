@@ -284,6 +284,7 @@ export function rewriteHtml(
     var PROXY = ${JSON.stringify("/api/proxy")};
     var TARGET = ${JSON.stringify(baseUrl)};
     var TARGET_ORIGIN = ${JSON.stringify(new URL(baseUrl).origin)};
+    var TARGET_URL = new URL(TARGET);
 
     function wrap(u){
       try {
@@ -295,6 +296,52 @@ export function rewriteHtml(
         return PROXY + '?url=' + encodeURIComponent(resolved);
       } catch(e){ return u; }
     }
+
+    // ── Window.location spoofing ───────────────────────────────────────────
+    // CRITICAL: Without this, the proxied page's JS sees:
+    //   window.location.pathname === "/api/proxy"
+    //   window.location.search === "?url=https%3A%2F%2Fwww.xbox.com%2Fen-US%2Fplay"
+    // But the SPA expects to see the ORIGINAL upstream URL's path/search/hash.
+    // For example, Xbox's SPA at /en-US/play reads location.pathname, sees
+    // "/api/proxy", and shows its 404 page ("Double check your map, Captain").
+    //
+    // We override window.location's getters to return the UPSTREAM values
+    // for pathname, search, hash, href, origin, hostname, port, protocol.
+    // The browser's address bar still shows the proxy URL — but the page's
+    // JS sees the upstream URL it expects.
+    try {
+      var origLoc = window.location;
+      var upstreamParts = {
+        href: TARGET,
+        origin: TARGET_URL.origin,
+        protocol: TARGET_URL.protocol,
+        host: TARGET_URL.host,
+        hostname: TARGET_URL.hostname,
+        port: TARGET_URL.port,
+        pathname: TARGET_URL.pathname,
+        search: TARGET_URL.search,
+        hash: TARGET_URL.hash
+      };
+      function defineLocProp(name) {
+        try {
+          Object.defineProperty(origLoc, name, {
+            configurable: true,
+            get: function(){ return upstreamParts[name]; },
+            set: function(v){
+              // Writes (like location.href = "/foo") should navigate
+              // through the proxy.
+              try { origLoc.assign.call(origLoc, wrap(v)); }
+              catch(e){}
+            }
+          });
+        } catch(e){}
+      }
+      ['href','origin','protocol','host','hostname','port','pathname','search','hash'].forEach(defineLocProp);
+      // Override assign / replace too (they were already overridden above
+      // but we want to be sure they still wrap URLs through the proxy).
+      // toString() should also return the upstream URL.
+      origLoc.toString = function(){ return TARGET; };
+    } catch(e){}
 
     // ── Framebuster neutralizer ───────────────────────────────────────────
     // Sites that detect they're in an iframe often do:
