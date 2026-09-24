@@ -549,16 +549,22 @@ export default function Home() {
       <footer className="border-t mt-auto">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
           <span>Built with Next.js 16 · deploy to Vercel · MIT</span>
-          <span className="ml-auto">
-            <a
-              className="hover:text-foreground underline-offset-2 hover:underline"
-              href="https://vercel.com/docs/functions/serverless-functions"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Vercel serverless docs →
-            </a>
-          </span>
+<a
+  href="/about"
+  className="hover:text-foreground underline-offset-2 hover:underline"
+>
+  About
+</a>
+<span className="ml-auto">
+  <a
+    className="hover:text-foreground underline-offset-2 hover:underline"
+    href="https://vercel.com/docs/functions/serverless-functions"
+    target="_blank"
+    rel="noreferrer"
+  >
+    Vercel serverless docs →
+  </a>
+</span>
         </div>
       </footer>
     </div>
