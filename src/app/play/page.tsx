@@ -28,11 +28,12 @@ interface Game {
   description: string;
   url: string;
   type: GameType;
-  category: "sports" | "racing" | "sandbox" | "puzzle";
+  category: "sports" | "racing" | "sandbox" | "puzzle" | "multiplayer" | "runner";
   badge?: string;
 }
 
 const GAMES: Game[] = [
+  // Sports
   {
     id: "retro-bowl",
     title: "Retro Bowl",
@@ -43,6 +44,7 @@ const GAMES: Game[] = [
     category: "sports",
     badge: "Most popular",
   },
+  // Racing
   {
     id: "polytrack",
     title: "Polytrack",
@@ -55,6 +57,50 @@ const GAMES: Game[] = [
     category: "racing",
     badge: "v0.6.2",
   },
+  // Runner
+  {
+    id: "run-3",
+    title: "Run 3",
+    description:
+      "The classic endless runner. Jump, dodge, and gravity-flip your way through tunnels in space. Simple controls, addicting gameplay — a Flash-game-era classic reborn.",
+    url: "https://games.crazygames.com/en_US/run-3/index.html",
+    type: "embed",
+    category: "runner",
+  },
+  // Multiplayer
+  {
+    id: "krunker",
+    title: "Krunker.io",
+    description:
+      "Fast-paced multiplayer first-person shooter. Blocky graphics, smooth gameplay, instant matchmaking. The most popular browser FPS — thousands of players online.",
+    url: "https://krunker.io",
+    type: "embed",
+    category: "multiplayer",
+    badge: "Multiplayer",
+  },
+  {
+    id: "1v1-lol",
+    title: "1v1.LOL",
+    description:
+      "Build, shoot, and outplay opponents in 1v1, 2v2, and battle royale modes. Fortnite-style building mechanics in your browser. Real-time multiplayer.",
+    // 1v1.lol uses Cloudflare bot protection that blocks our proxy.
+    // Link out instead — opens in a new tab on their site.
+    url: "https://1v1.lol",
+    type: "link",
+    category: "multiplayer",
+    badge: "Multiplayer",
+  },
+  {
+    id: "shellshockers",
+    title: "Shell Shockers",
+    description:
+      "Multiplayer egg-based shooter. Crack opponents, collect weapons, dominate the arena. The most ridiculous multiplayer FPS — surprisingly competitive.",
+    url: "https://shellshock.io",
+    type: "embed",
+    category: "multiplayer",
+    badge: "Multiplayer",
+  },
+  // Sandbox
   {
     id: "eaglercraft",
     title: "Eaglercraft",
@@ -66,6 +112,7 @@ const GAMES: Game[] = [
     category: "sandbox",
     badge: "Self-hosted",
   },
+  // Puzzle
   {
     id: "2048",
     title: "2048",
@@ -82,6 +129,8 @@ const CATEGORY_LABELS: Record<Game["category"], string> = {
   racing: "Racing",
   sandbox: "Sandbox",
   puzzle: "Puzzle",
+  multiplayer: "Multiplayer",
+  runner: "Runner",
 };
 
 export default function PlayPage() {
@@ -123,7 +172,7 @@ export default function PlayPage() {
           </p>
         </section>
 
-        {(["sports", "racing", "sandbox", "puzzle"] as Game["category"][]).map((category) => {
+        {(["multiplayer", "sports", "racing", "runner", "sandbox", "puzzle"] as Game["category"][]).map((category) => {
           const games = GAMES.filter((g) => g.category === category);
           if (games.length === 0) return null;
           return (
