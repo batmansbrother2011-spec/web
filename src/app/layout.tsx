@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -65,12 +64,15 @@ export default function RootLayout({
         <Toaster />
 
         {/* Google AdSense loader.
-            Loaded with strategy="afterInteractive" so it never blocks
-            the page from becoming interactive. */}
+            IMPORTANT: We use a raw <script> tag (not next/script) so the
+            tag is in the SERVER-RENDERED HTML. Google's AdSense crawler
+            fetches the HTML server-side and looks for this exact tag to
+            verify ownership. next/script's "afterInteractive" strategy
+            only emits a <link rel="preload"> server-side, which the
+            crawler doesn't recognize. */}
         {ADSENSE_CLIENT && ADSENSE_CLIENT !== "ca-pub-0000000000000000" && (
-          <Script
-            id="adsbygoogle-init"
-            strategy="afterInteractive"
+          <script
+            async
             src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
             crossOrigin="anonymous"
           />
