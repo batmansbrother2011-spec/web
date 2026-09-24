@@ -16,7 +16,7 @@ const PROJECTS: ProjectLink[] = [
     description:
       "Play Minecraft in your browser — no download required. Full single-player and multiplayer support, runs on any device with a modern browser.",
     // Replace this URL with your actual Eaglercraft site URL
-    url: "https://your-eaglercraft-site.vercel.app",
+    url: "https://eaglercraft-1-ruddy.vercel.app",
     icon: "gamepad",
     badge: "Play now",
   },
