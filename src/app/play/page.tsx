@@ -47,12 +47,13 @@ const GAMES: Game[] = [
     id: "polytrack",
     title: "Polytrack",
     description:
-      "A low-poly racing game with loops, jumps, and high speeds. Race against the clock on customizable tracks. Every millisecond counts.",
-    // Kodub (the original developer) blocks iframe embedding, so we link out.
-    url: "https://www.kodub.com/polytrack",
-    type: "link",
+      "A low-poly racing game with loops, jumps, and high speeds. Race against the clock on customizable tracks. Every millisecond counts. Version 0.6.2 — the latest stable release from Kodub.",
+    // Kodub's CSP blocks iframe embedding, but we route through our own
+    // /api/proxy which strips the CSP header, so we can embed it.
+    url: "https://app-polytrack.kodub.com/0.6.2/",
+    type: "embed",
     category: "racing",
-    badge: "Link out",
+    badge: "v0.6.2",
   },
   {
     id: "eaglercraft",
@@ -179,12 +180,15 @@ export default function PlayPage() {
         })}
 
         <section className="rounded-lg border bg-muted/30 p-4 text-xs text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">A note on game sources:</strong>{" "}
-          Games marked &quot;Play now&quot; are embedded via iframe directly
-          on this site. Games marked &quot;Open in new tab&quot; open on the
-          developer&apos;s own website (because they don&apos;t allow
-          embedding). All games are free to play — we don&apos;t host any
-          copyrighted game files, we just link to the official sources.
+          <strong className="text-foreground">How this works:</strong>{" "}
+          Games marked &quot;Play now&quot; are embedded directly on this
+          site. Some game developers (like Kodub for Polytrack) block
+          iframe embedding via Content-Security-Policy headers — for those,
+          we route the iframe through this site&apos;s own proxy, which
+          strips the embedding restrictions. The game still loads from
+          the developer&apos;s servers — we don&apos;t host any
+          copyrighted game files ourselves. Games marked &quot;Open in
+          new tab&quot; open on the developer&apos;s own website.
         </section>
       </main>
 
