@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { Toaster } from "@/components/ui/sonner";
 import { AdUnit } from "@/components/ad-unit";
 import { SiteFooter } from "@/components/site-footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface HistoryItem {
   url: string;
@@ -202,6 +203,7 @@ export default function Home() {
                 {cookieHosts.length === 1 ? "" : "s"} logged in
               </Badge>
             )}
+            <ThemeToggle />
             <a
               href="/web-proxy.zip"
               download="web-proxy.zip"
