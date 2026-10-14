@@ -47,6 +47,14 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link
+                  href="/remote"
+                  className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                >
+                  Remote Desktop
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/about"
                   className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
                 >
